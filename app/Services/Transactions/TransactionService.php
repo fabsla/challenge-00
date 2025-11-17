@@ -167,8 +167,11 @@ class TransactionService
         }
 
         return [
-            'origin_history'  => $origin_history->load(['user', 'account']),
-            'destiny_history' => $destiny_history->load(['user', 'account']),
+            // 'origin_history'  => $origin_history->load(['user', 'account']),
+            // 'destiny_history' => $destiny_history->load(['user', 'account']),
+            'value' => $dto->amount,
+            'payer' => $origin_account->user_id,
+            'payee' => $destiny_account->user_id,
         ];
     }
 }

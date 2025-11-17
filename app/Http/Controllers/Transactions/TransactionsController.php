@@ -21,23 +21,23 @@ class TransactionsController extends Controller
     public function deposit(TransactionRequest $request): JsonResponse
     {   
         $dto = TransactionDTO::appRequest($request);
+        $account = $dto->getAccount();
 
         $transaction_history = $this->depositService->deposit(
-            account: $dto->getAccount(),
+            account: $account,
             dto: $dto,
         );
 
         return response()->json([
             'data' => [
-                'transaction_id'    => $transaction_history->id,
-                'user_id'           => $transaction_history->user_id,
-                'user_name'         => $transaction_history->user->name,
-                'amount'            => $transaction_history->amount,
-                'type'              => $transaction_history->type,
-                'created_at'        => $transaction_history->created_at,
+                'transaction_id'    => $transaction_history['id'],
+                'user_id'           => $transaction_history['user_id'],
+                'amount'            => $transaction_history['amount'],
+                'type'              => $transaction_history['type'],
+                'created_at'        => $transaction_history['created_at'],
                 'account' => [
-                    'agency_number'     => $transaction_history->account->agency_number,
-                    'account_number'    => $transaction_history->account->account_number,
+                    'agency_number'     => $account->agency_number,
+                    'account_number'    => $account->account_number,
                 ],
             ],
             'message' => 'Depósito realizado com sucesso.',
@@ -47,23 +47,23 @@ class TransactionsController extends Controller
     public function withdrawal(TransactionRequest $request): JsonResponse
     { 
         $dto = TransactionDTO::appRequest($request);
+        $account = $dto->getAccount();
 
         $transaction_history = $this->depositService->withdrawal(
-            account: $dto->getAccount(),
+            account: $account,
             dto: $dto,
         );
 
         return response()->json([
             'data' => [
-                'transaction_id'    => $transaction_history->id,
-                'user_id'           => $transaction_history->user_id,
-                'user_name'         => $transaction_history->user->name,
-                'amount'            => $transaction_history->amount,
-                'type'              => $transaction_history->type,
-                'created_at'        => $transaction_history->created_at,
+                'transaction_id'    => $transaction_history['id'],
+                'user_id'           => $transaction_history['user_id'],
+                'amount'            => $transaction_history['amount'],
+                'type'              => $transaction_history['type'],
+                'created_at'        => $transaction_history['created_at'],
                 'account' => [
-                    'agency_number'     => $transaction_history->account->agency_number,
-                    'account_number'    => $transaction_history->account->account_number,
+                    'agency_number'     => $account->agency_number,
+                    'account_number'    => $account->account_number,
                 ],
             ],
             'message' => 'Saque realizado com sucesso.',
@@ -80,42 +80,16 @@ class TransactionsController extends Controller
         }
 
         $dto = TransferDTO::appRequest($request);
+        $origin_account = $dto->getOriginAccount();
+        $destiny_account = $dto->getDestinyAccount();
 
-        $transaction_history = $this->depositService->transfer(
-            origin_account: $dto->getOriginAccount(),
-            destiny_account: $dto->getDestinyAccount(),
+        $transaction_response = $this->depositService->transfer(
+            origin_account: $origin_account,
+            destiny_account: $destiny_account,
             dto: $dto,
         );
 
-        return response()->json([
-            'data' => [
-                'origin_transaction' => [
-                    'transaction_id'    => $transaction_history['origin_history']->id,
-                    'user_id'           => $transaction_history['origin_history']->user_id,
-                    'user_name'         => $transaction_history['origin_history']->user->name,
-                    'amount'            => $transaction_history['origin_history']->amount,
-                    'type'              => $transaction_history['origin_history']->type,
-                    'created_at'        => $transaction_history['origin_history']->created_at,
-                    'account' => [
-                        'agency_number'     => $transaction_history['origin_history']->account->agency_number,
-                        'account_number'    => $transaction_history['origin_history']->account->account_number,
-                    ],
-                ],
-                'destiny_transaction' => [
-                    'transaction_id'    => $transaction_history['destiny_history']->id,
-                    'user_id'           => $transaction_history['destiny_history']->user_id,
-                    'user_name'         => $transaction_history['destiny_history']->user->name,
-                    'amount'            => $transaction_history['destiny_history']->amount,
-                    'type'              => $transaction_history['destiny_history']->type,
-                    'created_at'        => $transaction_history['destiny_history']->created_at,
-                    'account' => [
-                        'agency_number'     => $transaction_history['destiny_history']->account->agency_number,
-                        'account_number'    => $transaction_history['destiny_history']->account->account_number,
-                    ],
-                ]
-            ],
-            'message' => 'Transferência realizada com sucesso.',
-        ], Response::HTTP_CREATED);
+        return response()->json($transaction_response, Response::HTTP_CREATED);
     }
 
 }
