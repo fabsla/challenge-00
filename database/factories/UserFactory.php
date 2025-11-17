@@ -26,9 +26,11 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
+            'cpf_cnpj' => fake()->unique()->numerify('###########'),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'lojista' => false,
         ];
     }
 
@@ -39,6 +41,17 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Set the user as a merchant (lojista).
+     */
+    public function merchant(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'lojista' => true,
+            'cpf_cnpj' => fake()->unique()->numerify('##############'),
         ]);
     }
 }
