@@ -24,7 +24,7 @@ test('deposit service deve criar uma transação com sucesso', function () use (
         amount: $depositAmount,
     );
 
-    $history = $depositService->deposit($dto);
+    $history = $depositService->deposit($dto->getAccount(), $dto);
 
     expect($history)->toBeInstanceOf(TransactionHistory::class);
     expect($history->type)->toBe('DEPOSIT');
@@ -49,7 +49,7 @@ test('deposit service deve lançar erro para valor menor ou igual a zero', funct
         amount: 0,
     );
 
-    expect(fn () => $depositService->deposit($dto))
+    expect(fn () => $depositService->deposit($dto->getAccount(), $dto))
         ->toThrow(InvalidArgumentException::class, 'O valor do depósito deve ser maior que zero.');
 });
 
@@ -65,7 +65,7 @@ test('deposit service deve lançar erro quando conta não existe', function () u
         amount: 1000,
     );
 
-    expect(fn () => $depositService->deposit($dto))->toThrow(Exception::class);
+    expect(fn () => $depositService->deposit($dto->getAccount(), $dto))->toThrow(Exception::class);
 });
 
 test('deposit service deve registrar histórico de transação', function () use ($depositService) {
@@ -82,7 +82,7 @@ test('deposit service deve registrar histórico de transação', function () use
         amount: $depositAmount,
     );
 
-    $history = $depositService->deposit($dto);
+    $history = $depositService->deposit($dto->getAccount(), $dto);
 
     expect(TransactionHistory::where('id', $history->id)->exists())->toBeTrue();
     expect($history->description)->toBe('Depósito realizado');

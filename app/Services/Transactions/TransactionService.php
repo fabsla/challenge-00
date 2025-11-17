@@ -4,6 +4,7 @@ namespace App\Services\Transactions;
 
 use App\DataTransferObjects\Transactions\TransactionDTO;
 use App\Helpers\Enums\Transactions\EnumTransactionActions;
+use App\Models\Account;
 use App\Models\TransactionHistory;
 use App\Strategies\Accounts\AccountGetter\AccountGetterInterface;
 use Illuminate\Support\Facades\Auth;
@@ -21,13 +22,11 @@ class TransactionService
      * @return TransactionHistory $history
      *
      */
-    public function deposit(TransactionDTO $dto): TransactionHistory
+    public function deposit(Account $account, TransactionDTO $dto): TransactionHistory
     {
         if ($dto->amount <= 0) {
             throw new InvalidArgumentException('O valor do depósito deve ser maior que zero.');
         }
-
-        $account = $dto->accountGetterStrategy->execute($dto);
 
         DB::beginTransaction();
         try {

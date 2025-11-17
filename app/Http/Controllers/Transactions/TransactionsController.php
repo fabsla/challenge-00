@@ -17,8 +17,11 @@ class TransactionsController extends Controller
 
     public function deposit(TransactionRequest $request): JsonResponse
     {   
+        $dto = TransactionDTO::appRequest($request);
+
         $transaction_history = $this->depositService->deposit(
-            TransactionDTO::appRequest($request),
+            account: $dto->getAccount(),
+            dto: $dto,
         );
 
         return response()->json([

@@ -3,6 +3,7 @@
 namespace App\DataTransferObjects\Transactions;
 
 use App\Http\Requests\Transactions\TransactionRequest;
+use App\Models\Account;
 use App\Strategies\Accounts\AccountGetter\AccountGetterInterface;
 use App\Strategies\Accounts\AccountGetter\AccountGetterInternalStrategy;
 
@@ -18,13 +19,18 @@ class TransactionDTO
         $this->accountGetterStrategy = self::getStrategy($this->type);
     }
 
-    public static function getStrategy(string $type): AccountGetterInterface
+    private static function getStrategy(string $type): AccountGetterInterface
     {
         return match ($type) {
             'INTERNO' => new AccountGetterInternalStrategy(),
             // 'PIX' => new AccountGetterPixStrategy(),
             default => throw new \InvalidArgumentException('Tipo de depósito inválido.'),
         };
+    }
+
+    public function getAccount(): Account
+    {
+        return $this->accountGetterStrategy->execute($this);
     }
 
     public static function appRequest(TransactionRequest $request): TransactionDTO
