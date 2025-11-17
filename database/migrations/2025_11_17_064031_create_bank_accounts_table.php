@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->integer('balance')->default(0);
-            $table->string('agency_number')->nullable();
-            $table->string('account_number')->nullable();
+            $table->string('agency_number');
+            $table->string('account_number');
             $table->timestamps();
         });
     }

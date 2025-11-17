@@ -55,8 +55,17 @@ class AuthController extends Controller
                 $credentials['password'],
             );
 
+            $user = $authentication_data['user'];
+
             return response()->json([
                 'data' => [
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'cpf_cnpj' => $user->cpf_cnpj_formatado,
+                        'lojista' => $user->lojista,
+                    ],
                     'token' => $authentication_data['token'],
                 ],
                 'message' => 'Login realizado com sucesso.',

@@ -19,8 +19,8 @@ class AccountFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'agency_number' => $this->faker->numerify('####'),
-            'account_number' => $this->faker->numerify('########'),
+            'agency_number' => str_pad((string) rand(0, 9999), 4, '0', STR_PAD_LEFT),
+            'account_number' => str_pad((string) rand(0, 99999999), 8, '0', STR_PAD_LEFT),
             'balance' => $this->faker->numberBetween(0, 100000),
         ];
     }
