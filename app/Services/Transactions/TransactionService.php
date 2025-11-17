@@ -7,10 +7,12 @@ use App\Helpers\Enums\Transactions\EnumTransactionActions;
 use App\Models\Account;
 use App\Models\TransactionHistory;
 use App\Strategies\Accounts\AccountGetter\AccountGetterInterface;
+use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use RuntimeException;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 class TransactionService
 {
@@ -47,6 +49,48 @@ class TransactionService
         } catch (\Exception $e) {
             DB::rollBack();
             throw new RuntimeException('Erro ao processar o depósito: ' . $e->getMessage(), previous: $e);
+        }
+
+        return $history->load(['user', 'account']);
+    }
+
+    /**
+     * Realizar saque em uma conta
+     * 
+     * @param TransactionDTO $dto
+     * @param AccountGetterInterface $strategy
+     * @return TransactionHistory $history
+     *
+     */
+    public function withdrawal(Account $account, TransactionDTO $dto): TransactionHistory
+    {
+        if ($dto->amount <= 0) {
+            throw new InvalidArgumentException('O valor do saque deve ser maior que zero.');
+        }
+
+        if ($account->balance < $dto->amount) {
+            throw new UnprocessableEntityHttpException('Saldo insuficiente para realizar o saque.', code: 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $account->balance -= $dto->amount;
+            $account->save();
+
+            /** registrar histórico */
+            $history = TransactionHistory::create([
+                'account_id' => $account->id,
+                'user_id'    => Auth::id(),
+                'type'       => EnumTransactionActions::WITHDRAWAL->value,
+                'amount'     => $dto->amount,
+                'description'=> 'Saque realizado',
+            ]);
+
+            DB::commit();
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw new RuntimeException('Erro ao processar o saque: ' . $e->getMessage(), previous: $e);
         }
 
         return $history->load(['user', 'account']);
