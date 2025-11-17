@@ -7,7 +7,7 @@ use App\Models\User;
 use App\Services\Transactions\TransactionService;
 use Illuminate\Support\Facades\Auth;
 
-$depositService = new TransactionService();
+$depositService = app(TransactionService::class);
 
 test('deposit service deve criar uma transação com sucesso', function () use ($depositService) {
     $user = User::factory()->create();

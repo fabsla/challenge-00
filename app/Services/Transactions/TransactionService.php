@@ -7,6 +7,8 @@ use App\DataTransferObjects\Transactions\TransferDTO;
 use App\Helpers\Enums\Transactions\EnumTransactionActions;
 use App\Models\Account;
 use App\Models\TransactionHistory;
+use App\Services\Authorization\AuthorizationService;
+use App\Services\Notification\NotificationService;
 use App\Strategies\Accounts\AccountGetter\AccountGetterInterface;
 use Exception;
 use Illuminate\Support\Facades\Auth;
@@ -17,6 +19,10 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 class TransactionService
 {
+    public function __construct(
+        private readonly AuthorizationService $authorizationService,
+        private readonly NotificationService $notificationService,
+    ) {}
     /**
      * Realizar depósito em uma conta
      * 
@@ -69,6 +75,7 @@ class TransactionService
             throw new InvalidArgumentException('O valor do saque deve ser maior que zero.');
         }
 
+        /** necessario ter dinheiro na conta para realizar o saque */
         if ($account->balance < $dto->amount) {
             throw new UnprocessableEntityHttpException('Saldo insuficiente para realizar o saque.', code: 422);
         }
@@ -103,9 +110,17 @@ class TransactionService
             throw new InvalidArgumentException('O valor da transferência deve ser maior que zero.');
         }
 
+        /** necessario ter dinheiro na conta para realizar a transferencia */
         if ($origin_account->balance < $dto->amount) {
             throw new UnprocessableEntityHttpException('Saldo insuficiente para realizar a transferência.', code: 422);
         }
+
+        /** Autorizar a transferência através da API externa */
+        $this->authorizationService->authorize(
+            $origin_account->id,
+            $destiny_account->id,
+            $dto->amount
+        );
 
         DB::beginTransaction();
         try {
@@ -132,6 +147,17 @@ class TransactionService
                 'amount'     => $dto->amount,
                 'description'=> 'Transferência realizada da conta ' . $origin_account->account_number,
             ]);
+            
+            /** notificacao */
+            $notification_success = $this->notificationService->notifyTransfer(
+                $origin_account->id,
+                $destiny_account->id,
+                $dto->amount
+            );
+
+            if (!$notification_success) {
+                throw new RuntimeException('Falha ao enviar notificação de transferência.');
+            }
 
             DB::commit();
             

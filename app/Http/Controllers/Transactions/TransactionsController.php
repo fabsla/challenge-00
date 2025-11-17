@@ -10,6 +10,7 @@ use App\Http\Requests\Transactions\TransferRequest;
 use App\Services\Transactions\TransactionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 
 class TransactionsController extends Controller
 {
@@ -44,7 +45,7 @@ class TransactionsController extends Controller
     }
 
     public function withdrawal(TransactionRequest $request): JsonResponse
-    {   
+    { 
         $dto = TransactionDTO::appRequest($request);
 
         $transaction_history = $this->depositService->withdrawal(
@@ -70,7 +71,14 @@ class TransactionsController extends Controller
     }
 
     public function transfer(TransferRequest $request): JsonResponse
-    {   
+    {
+        /** lojistas não podem realizar transferências, apenas receber */
+        if (Auth::user()->lojista) {
+            return response()->json([
+                'message' => 'Lojistas não podem realizar saques.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
         $dto = TransferDTO::appRequest($request);
 
         $transaction_history = $this->depositService->transfer(
