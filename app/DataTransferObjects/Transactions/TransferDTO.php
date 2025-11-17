@@ -3,13 +3,15 @@
 namespace App\DataTransferObjects\Transactions;
 
 use App\Http\Requests\Transactions\TransactionRequest;
+use App\Http\Requests\Transactions\TransferRequest;
 use App\Models\Account;
 use App\Strategies\Accounts\AccountGetter\AccountGetterInterface;
 use App\Strategies\Accounts\AccountGetter\AccountGetterInternalStrategy;
 
-class TransactionDTO
+class TransferDTO
 {
     public function __construct(
+        public string $origin_account_id,
         public string $agency_number,
         public string $account_number,
         public string $type,
@@ -28,14 +30,20 @@ class TransactionDTO
         };
     }
 
-    public function getAccount(): Account
+    public function getDestinyAccount(): Account
     {
         return $this->accountGetterStrategy->execute($this);
     }
 
-    public static function appRequest(TransactionRequest $request): TransactionDTO
+    public function getOriginAccount(): Account
+    {
+        return Account::findOrFail($this->origin_account_id);
+    }
+
+    public static function appRequest(TransferRequest $request): TransferDTO
     {
         return new self (
+            origin_account_id:      $request->input('origin_account_id'),
             agency_number:          $request->input('agency_number'),
             account_number:         $request->input('account_number'),
             amount:                 $request->input('amount'),

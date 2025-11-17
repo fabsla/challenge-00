@@ -3,6 +3,7 @@
 namespace App\Services\Transactions;
 
 use App\DataTransferObjects\Transactions\TransactionDTO;
+use App\DataTransferObjects\Transactions\TransferDTO;
 use App\Helpers\Enums\Transactions\EnumTransactionActions;
 use App\Models\Account;
 use App\Models\TransactionHistory;
@@ -94,5 +95,54 @@ class TransactionService
         }
 
         return $history->load(['user', 'account']);
+    }
+
+    public function transfer(Account $origin_account, Account $destiny_account, TransferDTO $dto): array
+    {
+        if ($dto->amount <= 0) {
+            throw new InvalidArgumentException('O valor da transferência deve ser maior que zero.');
+        }
+
+        if ($origin_account->balance < $dto->amount) {
+            throw new UnprocessableEntityHttpException('Saldo insuficiente para realizar a transferência.', code: 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $origin_account->balance -= $dto->amount;
+            $origin_account->save();
+
+            $destiny_account->balance += $dto->amount;
+            $destiny_account->save();
+
+            /** registrar histórico saque */
+            $origin_history = TransactionHistory::create([
+                'account_id' => $origin_account->id,
+                'user_id'    => Auth::id(),
+                'type'       => EnumTransactionActions::TRANSFER_FROM->value,
+                'amount'     => $dto->amount,
+                'description'=> 'Transferência realizada para a conta ' . $destiny_account->account_number,
+            ]);
+
+            /** registrar histórico deposito */
+            $destiny_history = TransactionHistory::create([
+                'account_id' => $destiny_account->id,
+                'user_id'    => Auth::id(),
+                'type'       => EnumTransactionActions::TRANSFER_TO->value,
+                'amount'     => $dto->amount,
+                'description'=> 'Transferência realizada da conta ' . $origin_account->account_number,
+            ]);
+
+            DB::commit();
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw new RuntimeException('Erro ao processar a transferência: ' . $e->getMessage(), previous: $e);
+        }
+
+        return [
+            'origin_history'  => $origin_history->load(['user', 'account']),
+            'destiny_history' => $destiny_history->load(['user', 'account']),
+        ];
     }
 }
