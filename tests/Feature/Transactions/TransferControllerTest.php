@@ -24,23 +24,9 @@ test('transfer controller deve realizar transferência com sucesso', function ()
 
     $response->assertCreated();
     $response->assertJsonStructure([
-        'data' => [
-            'origin_transaction' => [
-                'transaction_id',
-                'user_id',
-                'amount',
-                'type',
-                'created_at',
-            ],
-            'destiny_transaction' => [
-                'transaction_id',
-                'user_id',
-                'amount',
-                'type',
-                'created_at',
-            ],
-        ],
-        'message',
+        'value',
+        'payer',
+        'payee',
     ]);
 });
 
@@ -163,11 +149,9 @@ test('transfer controller deve retornar dados corretos da transação', function
         ]);
 
     $response->assertSuccessful();
-    expect($response->json('data.origin_transaction.user_id'))->toBe($user->id);
-    expect($response->json('data.origin_transaction.amount'))->toBe(1500);
-    expect($response->json('data.origin_transaction.type'))->toBe('TRANSFER_FROM');
-    expect($response->json('data.destiny_transaction.amount'))->toBe(1500);
-    expect($response->json('data.destiny_transaction.type'))->toBe('TRANSFER_TO');
+    expect($response->json('payer'))->toBe($user->id);
+    expect($response->json('value'))->toBe(1500);
+    expect($response->json('payee'))->toBe($destinyAccount->user_id);
 });
 
 test('transfer controller deve rejeitar transferência com saldo insuficiente', function () {
@@ -259,10 +243,9 @@ test('transfer controller deve retornar dados de ambas as contas na resposta', f
         ]);
 
     $response->assertSuccessful();
-    expect($response->json('data.origin_transaction.account.agency_number'))->toBe($originAccount->agency_number);
-    expect($response->json('data.origin_transaction.account.account_number'))->toBe($originAccount->account_number);
-    expect($response->json('data.destiny_transaction.account.agency_number'))->toBe($destinyAccount->agency_number);
-    expect($response->json('data.destiny_transaction.account.account_number'))->toBe($destinyAccount->account_number);
+    expect($response->json('value'))->toBe(2000);
+    expect($response->json('payer'))->toBe($originAccount->user_id);
+    expect($response->json('payee'))->toBe($destinyAccount->user_id);
 });
 
 test('transfer controller deve retornar mensagem de sucesso', function () {
@@ -283,5 +266,7 @@ test('transfer controller deve retornar mensagem de sucesso', function () {
         ]);
 
     $response->assertSuccessful();
-    expect($response->json('message'))->toContain('Transferência');
+    expect($response->json('value'))->toBe(1000);
+    expect($response->json('payer'))->toBe($originAccount->user_id);
+    expect($response->json('payee'))->toBe($destinyAccount->user_id);
 });

@@ -2,6 +2,7 @@
 
 namespace App\Services\Notification;
 
+use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -30,7 +31,7 @@ class NotificationService
      * @param int $amount
      * @return bool
      */
-    public function notifyTransfer(int $originAccountId, int $destinyAccountId, int $amount): bool
+    public function notifyTransfer(User $user, int $value): bool
     {
         $url = $this->getNotificationUrl();
         if ($url === null) {
@@ -38,30 +39,28 @@ class NotificationService
             return false;
         }
 
+        $decimal_value = $value / 100;
+
         try {
             $response = Http::timeout($this->timeout)
                 ->connectTimeout($this->timeout)
                 ->post($url, [
-                    'origin_account_id' => $originAccountId,
-                    'destiny_account_id' => $destinyAccountId,
-                    'amount' => $amount,
-                    'type' => 'transfer',
+                    'email' => $user->email,
+                    'value' => $decimal_value,
                 ]);
 
             if ($response->successful()) {
                 Log::info('Notificação de transferência enviada com sucesso', [
-                    'origin_account_id' => $originAccountId,
-                    'destiny_account_id' => $destinyAccountId,
-                    'amount' => $amount,
+                    'email' => $user->email,
+                    'value' => $decimal_value,
                 ]);
                 return true;
             }
 
             Log::warning('Falha ao enviar notificação de transferência', [
                 'status' => $response->status(),
-                'origin_account_id' => $originAccountId,
-                'destiny_account_id' => $destinyAccountId,
-                'amount' => $amount,
+                'email' => $user->email,
+                'value' => $decimal_value,
             ]);
 
             return false;
@@ -69,9 +68,8 @@ class NotificationService
         } catch (\Exception $exception) {
             Log::warning('Erro ao enviar notificação de transferência', [
                 'message' => $exception->getMessage(),
-                'origin_account_id' => $originAccountId,
-                'destiny_account_id' => $destinyAccountId,
-                'amount' => $amount,
+                'email' => $user->email,
+                'value' => $decimal_value,
             ]);
 
             return false;

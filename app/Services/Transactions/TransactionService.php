@@ -116,11 +116,7 @@ class TransactionService
         }
 
         /** Autorizar a transferência através da API externa */
-        $this->authorizationService->authorize(
-            $origin_account->id,
-            $destiny_account->id,
-            $dto->amount
-        );
+        $this->authorizationService->authorize();
 
         DB::beginTransaction();
         try {
@@ -131,7 +127,7 @@ class TransactionService
             $destiny_account->save();
 
             /** registrar histórico saque */
-            $origin_history = TransactionHistory::create([
+            TransactionHistory::create([
                 'account_id' => $origin_account->id,
                 'user_id'    => Auth::id(),
                 'type'       => EnumTransactionActions::TRANSFER_FROM->value,
@@ -140,7 +136,7 @@ class TransactionService
             ]);
 
             /** registrar histórico deposito */
-            $destiny_history = TransactionHistory::create([
+            TransactionHistory::create([
                 'account_id' => $destiny_account->id,
                 'user_id'    => Auth::id(),
                 'type'       => EnumTransactionActions::TRANSFER_TO->value,
@@ -150,9 +146,8 @@ class TransactionService
             
             /** notificacao */
             $notification_success = $this->notificationService->notifyTransfer(
-                $origin_account->id,
-                $destiny_account->id,
-                $dto->amount
+                $destiny_account->user,
+                $dto->amount,
             );
 
             if (!$notification_success) {
@@ -167,8 +162,6 @@ class TransactionService
         }
 
         return [
-            // 'origin_history'  => $origin_history->load(['user', 'account']),
-            // 'destiny_history' => $destiny_history->load(['user', 'account']),
             'value' => $dto->amount,
             'payer' => $origin_account->user_id,
             'payee' => $destiny_account->user_id,
