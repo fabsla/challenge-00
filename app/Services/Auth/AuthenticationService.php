@@ -20,16 +20,13 @@ class AuthenticationService
      */
     public function authenticate(string $login, string $password): array
     {
-        // Detect if login is email or cpf_cnpj
         $isEmail = filter_var($login, FILTER_VALIDATE_EMAIL);
 
-        if ($isEmail) {
-            $user = User::query()->where('email', $login)->first();
-        } else {
-            $user = User::query()->where('cpf_cnpj', $login)->first();
-        }
-
-        if (! $user || ! Hash::check($password, $user->password)) {
+        $user = $isEmail
+            ? User::query()->where('email', $login)->first()
+            : User::query()->where('cpf_cnpj', $login)->first();
+        
+        if (!$user || !Hash::check($password, $user->password)) {
             throw new InvalidArgumentException('Credenciais inválidas.');
         }
 

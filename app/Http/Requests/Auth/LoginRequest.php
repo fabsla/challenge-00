@@ -35,7 +35,7 @@ class LoginRequest extends FormRequest
         $validator->after(function ($validator) {
             $login = $this->input('login');
 
-            if (! $login) {
+            if (!$login) {
                 return;
             }
 
@@ -52,17 +52,16 @@ class LoginRequest extends FormRequest
 
                 return;
             }
-
             $onlyDigits = preg_replace('/\D+/', '', $login);
-
+            
             // Check if login is cpf_cnpj (11 or 14 digits)
             if (preg_match('/^\d{11}$|^\d{14}$/', $onlyDigits)) {
                 // Validate cpf_cnpj exists
                 $userExists = \App\Models\User::query()
-                    ->where('cpf_cnpj', $onlyDigits)
-                    ->exists();
-
-                if (! $userExists) {
+                ->where('cpf_cnpj', $onlyDigits)
+                ->exists();
+                
+                if (!$userExists) {
                     $validator->errors()->add('login', 'Credenciais inválidas.');
                 }
 
