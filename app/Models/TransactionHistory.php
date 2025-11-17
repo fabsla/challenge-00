@@ -5,38 +5,38 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Account extends Model
+class TransactionHistory extends Model
 {
     use HasFactory;
 
-    protected $table = 'accounts';
+    protected $table = 'transaction_history';
 
     /**
      * @var array<int, string>
      */
     protected $fillable = [
+        'account_id',
         'user_id',
-        'balance',
-        'agency_number',
-        'account_number',
+        'type',
+        'amount',
+        'description',
     ];
 
     /**
      * @var array<string, string>
      */
     protected $casts = [
-        'balance' => 'integer',
+        'amount' => 'integer',
     ];
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(Account::class);
+    }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function history(): HasMany
-    {
-        return $this->HasMany(TransactionHistory::class);
     }
 }
